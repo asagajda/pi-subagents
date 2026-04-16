@@ -205,7 +205,7 @@ export function renderSubagentResult(
 		c.addChild(new Text(trunc(`${icon} ${theme.fg("toolTitle", theme.bold(r.agent))}${contextBadge}${progressInfo}`), 0, 0));
 		c.addChild(new Spacer(1));
 		c.addChild(
-			new Text(theme.fg("dim", `Task: ${r.task}`), 0, 0),
+			new Text(trunc(theme.fg("dim", `Task: ${r.task}`)), 0, 0),
 		);
 		c.addChild(new Spacer(1));
 
@@ -230,15 +230,17 @@ export function renderSubagentResult(
 			}
 		}
 
-		const items = getDisplayItems(r.messages);
-		// Use preserved toolCalls when messages were compacted
-		const toolItems = items.length > 0
-			? items.filter((it): it is { type: "tool"; name: string; args: Record<string, any> } => it.type === "tool")
-			: (r.toolCalls?.map(tc => ({ type: "tool" as const, name: tc.name, args: tc.args })) ?? []);
-		for (const item of toolItems) {
-			c.addChild(new Text(trunc(theme.fg("muted", formatToolCall(item.name, item.args, expanded))), 0, 0));
+		// Only show tool calls when expanded (collapsed = compact summary)
+		if (expanded) {
+			const items = getDisplayItems(r.messages);
+			const toolItems = items.length > 0
+				? items.filter((it): it is { type: "tool"; name: string; args: Record<string, any> } => it.type === "tool")
+				: (r.toolCalls?.map(tc => ({ type: "tool" as const, name: tc.name, args: tc.args })) ?? []);
+			for (const item of toolItems) {
+				c.addChild(new Text(theme.fg("muted", formatToolCall(item.name, item.args, true)), 0, 0));
+			}
+			if (toolItems.length) c.addChild(new Spacer(1));
 		}
-		if (items.length) c.addChild(new Spacer(1));
 
 		if (output) c.addChild(new Markdown(output, 0, 0, mdTheme));
 		c.addChild(new Spacer(1));
@@ -383,7 +385,7 @@ export function renderSubagentResult(
 			: `${statusIcon} Step ${i + 1}: ${theme.bold(r.agent)}${modelDisplay}${stats}`;
 		c.addChild(new Text(trunc(stepHeader), 0, 0));
 
-		c.addChild(new Text(theme.fg("dim", `    task: ${r.task}`), 0, 0));
+		c.addChild(new Text(trunc(theme.fg("dim", `    task: ${r.task}`)), 0, 0));
 
 		const outputTarget = extractOutputTarget(r.task);
 		if (outputTarget) {
