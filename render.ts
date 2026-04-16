@@ -231,9 +231,12 @@ export function renderSubagentResult(
 		}
 
 		const items = getDisplayItems(r.messages);
-		for (const item of items) {
-			if (item.type === "tool")
-				c.addChild(new Text(trunc(theme.fg("muted", formatToolCall(item.name, item.args, expanded))), 0, 0));
+		// Use preserved toolCalls when messages were compacted
+		const toolItems = items.length > 0
+			? items.filter((it): it is { type: "tool"; name: string; args: Record<string, any> } => it.type === "tool")
+			: (r.toolCalls?.map(tc => ({ type: "tool" as const, name: tc.name, args: tc.args })) ?? []);
+		for (const item of toolItems) {
+			c.addChild(new Text(trunc(theme.fg("muted", formatToolCall(item.name, item.args, expanded))), 0, 0));
 		}
 		if (items.length) c.addChild(new Spacer(1));
 
